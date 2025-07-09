@@ -1,0 +1,11 @@
+
+.venv
+.env*
+**/__pycache__/
+*.db
+.vscode
+logs/
+build/
+letsencrypt/
+**.egg-info**
+.python-version

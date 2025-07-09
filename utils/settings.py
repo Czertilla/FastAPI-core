@@ -1,0 +1,82 @@
+from functools import lru_cache
+from pydantic import ValidationInfo, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from os import environ
+
+from dotenv import load_dotenv
+
+from ..utils.enums.settings import DBManagerType
+from ..utils.get_version import get_version
+
+load_dotenv()
+
+
+class Settings(BaseSettings):
+    """
+    Application settings class.
+
+    This class loads settings from environment variables and the .env file.
+    It is used to manage application configuration parameters.
+    """
+
+    APP_NAME: str = "Simple App"
+    """Name of the FastAPI application that will be displayed in places such as Swagger."""
+
+    DB_DBMS: DBManagerType = DBManagerType.__default__
+    """Type of database management system used (e.g., sqlite, postgres)."""
+
+    DB_NAME: str = "simple-app"
+    """Name of the database used."""
+
+    DB_USER: str | None = None
+    """Username for connecting to the database (required for PostgreSQL)."""
+
+    DB_PASS: str | None = None
+    """Password for the database user (required for PostgreSQL)."""
+
+    DB_HOST: str | None = None
+    """Hostname or IP address of the database server (required for PostgreSQL)."""
+
+    DB_PORT: str | None = None
+    """Port number on which the database server is running (required for PostgreSQL)."""
+
+    REDIS_URL: str = "redis://localhost:6379"
+    """URL for connecting to the Redis server (required for Redis)."""
+
+    MAX_PAGE_SIZE: int = 100
+
+    VERSION: str = get_version()
+    """The version of this project, displays in messages and descripions"""
+
+    model_config = SettingsConfigDict(env_file=environ, extra="ignore")
+    """Configuration for Pydantic settings, defining how environment variables are loaded."""
+
+    @field_validator("DB_USER", "DB_PASS", "DB_HOST", "DB_PORT", mode="before")
+    @classmethod
+    def check_postgres_fields(
+        cls, value: str | None, info: ValidationInfo
+    ) -> str | None:
+        """
+        Ensures that PostgreSQL-related fields are set when DB_DBMS is 'postgres'.
+
+        Raises:
+            ValueError: If a required PostgreSQL field is missing.
+        """
+        if info.data.get("DB_DBMS") == DBManagerType.postgres and not value:
+            raise ValueError(
+                f"{info.field_name} is required when DB_DBMS is set to 'postgres'"
+            )
+        return value
+
+
+@lru_cache
+def getSettings() -> Settings:
+    """
+    Returns a cached instance of the application settings.
+
+    This function ensures that the settings are only loaded once and then reused.
+
+    Returns:
+        Settings: The application settings instance.
+    """
+    return Settings()
