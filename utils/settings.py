@@ -2,6 +2,7 @@ from functools import lru_cache
 from pydantic import ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from os import environ
+from aiogram.enums import ParseMode
 
 from dotenv import load_dotenv
 
@@ -43,10 +44,28 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379"
     """URL for connecting to the Redis server (required for Redis)."""
 
+    LOCALIZATION_CACHE_TTL: int = 60
+    """Time-to-live for cached translations from settings"""
+
     MAX_PAGE_SIZE: int = 100
+
+    BOT_TG_TOKEN: str | None = None
+    """Telegram bot token issued by BotFather.
+    
+    For more information, visit: https://core.telegram.org/bots
+    """
+
+    BOT_TG_WEBHOOK: str = "/webhook"
+    """The HTTPS address of your application (WITHOUT THE REQUEST PATH) that Telegram will use for the webhook."""
+
+    BOT_PARSE_MODE: ParseMode = ParseMode.HTML
+    """The message parsing mode for the Telegram bot (e.g., Markdown, HTML)."""
 
     VERSION: str = get_version()
     """The version of this project, displays in messages and descripions"""
+
+    DEV_ID_LIST: list[int] = []
+    """The list of telegram ids of developers team"""
 
     model_config = SettingsConfigDict(env_file=environ, extra="ignore")
     """Configuration for Pydantic settings, defining how environment variables are loaded."""
